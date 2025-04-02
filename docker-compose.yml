@@ -1,0 +1,140 @@
+services:
+  strapi_tme10:
+    container_name: strapi_tme10
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_CLIENT: ${DATABASE_CLIENT}
+      DATABASE_HOST: strapiDB_tme10
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      APP_KEYS: ${APP_KEYS}
+      NODE_ENV: ${NODE_ENV}
+      PORT: 1337
+    volumes:
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+      - ./package.json:/opt/package.json
+      - ./yarn.lock:/opt/yarn.lock
+      - ./.env:/opt/app/.env
+      - ./public/uploads:/opt/app/public/uploads
+    ports:
+      - '1337:1337'
+    networks:
+      - strapi_tme10
+    depends_on:
+      - strapiDB_tme10
+
+  strapiDB_tme10:
+    container_name: strapiDB_tme10
+    restart: unless-stopped
+    env_file: .env
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - postgres-data-tme10:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - strapi_tme10
+
+  zookeeper_tme10:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper_tme10
+    ports:
+      - '2181:2181'
+    expose:
+      - '2181'
+    networks:
+      - strapi_tme10
+
+  kafka_tme10:
+    image: wurstmeister/kafka:latest
+    container_name: kafka_tme10
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://localhost:9093,OUTSIDE://kafka_tme10:9092,
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper_tme10:2181'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKAJS_NO_PARTITIONER_WARNING: '1'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_NO_LISTENER_AUTHENTICATION_PLAINTEXT: 'true'
+      KAFKA_NO_LISTENER_AUTHENTICATION_SSL: 'true'
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_LOG_DIRS: /kafka/logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper_tme10
+    networks:
+      - strapi_tme10
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - '1883:1883'
+    networks:
+      - strapi_tme10
+    depends_on:
+      - strapiDB_tme10
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+
+  mqtt-to-kafka:
+    container_name: mqtt-to-kafka
+    build:
+      context: ./mqtt-kafka-connector
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - strapi_tme10
+    depends_on:
+      kafka_tme10:
+        condition: service_healthy
+      zookeeper_tme10:
+        condition: service_started
+      mosquitto:
+        condition: service_started
+
+  stock-consumer_tme10:
+    container_name: stock-consumer_tme10
+    build:
+      context: ./stock-consumer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - strapi_tme10
+    depends_on:
+      - mqtt-to-kafka
+
+networks:
+  strapi_tme10:
+    name: Strapi_tme10
+    driver: bridge
+    
+volumes:
+  postgres-data-tme10:  # Volume pour la DB
