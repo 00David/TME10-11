@@ -1,0 +1,5 @@
+node_modules
+mosquitto
+mqtt-js-test
+mqtt-kafka-connector
+stock-consumer
