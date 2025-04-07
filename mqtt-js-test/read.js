@@ -14,6 +14,6 @@ client.subscribe(TOPIC, (err) => {
 })
 
 client.on('message', (topic, message) => {
-  console.log('topic: ', topic)
-  console.log(message.toString())
+  console.log("Read : topic: ", topic)
+  console.log("Read : "+message.toString())
 })

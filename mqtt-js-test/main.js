@@ -7,8 +7,8 @@ const client = mqtt.connect(ADDRESS)
 
 client.on('connect', (err) => {
   if (err) console.error(err)
-  console.log('connected')
-  console.log('topic: ', TOPIC)
+  console.log('Main : connected')
+  console.log('Main : topic: ', TOPIC)
   let t = 0
   setInterval(() => client.publish(TOPIC, 'Hello mqtt' + t++), 1000)
 })
