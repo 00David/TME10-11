@@ -4,6 +4,8 @@
 
 **Lien du GitHub : https://github.com/00David/TME10-11**  
 
+**Vidéo de présentation : Presentation_TME10-11.mp4**  
+
 Faire la commande **npm install** dans le répertoire racine si récupération depuis le GitHub.  
 
 ### Lancement de l'architecture  
