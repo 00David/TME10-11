@@ -6,7 +6,9 @@
 
 **Vidéo de présentation : Presentation_TME10-11.mp4**  
 
-Faire la commande **npm install** dans le répertoire racine si récupération depuis le GitHub.  
+### Mise en place
+
+Faire la commande **npm install** dans le répertoire racine.  
 
 ### Lancement de l'architecture  
 
