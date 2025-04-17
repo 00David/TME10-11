@@ -5,6 +5,7 @@
 **Lien du GitHub : https://github.com/00David/TME10-11**  
 
 **Vidéo de présentation : Presentation_TME10-11.mp4**  
+Si pas d'audio dans la vidéo, utilisez VLC pour la lire (problème du format de compression audio).  
 
 ### Mise en place
 
